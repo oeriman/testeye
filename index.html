@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Image Describer (with Web Detection)</title>
+    <title>Gemini Art Identifier (Integrated Vision AI)</title>
     <!-- Tailwind CSS CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -68,7 +68,7 @@
             border-radius: 0.5rem;
             object-fit: contain; /* Ensure image fits without cropping */
         }
-        .description-area, .web-detection-area { /* Added web-detection-area */
+        .description-area { /* Removed .web-detection-area class */
             background-color: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 0.75rem;
@@ -78,33 +78,6 @@
             text-align: left;
             overflow-wrap: break-word; /* Ensure long words break */
             white-space: pre-wrap; /* Preserve whitespace and line breaks */
-        }
-        .web-detection-area ul {
-            list-style: none; /* No bullets */
-            padding-left: 0;
-        }
-        .web-detection-area li {
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .web-detection-area li a {
-            color: #4f46e5; /* Indigo link color */
-            text-decoration: underline;
-            word-break: break-all; /* Break long URLs */
-        }
-        .web-detection-area li a:hover {
-            color: #6366f1;
-        }
-        .web-detection-area .museum-badge {
-            background-color: #a78bfa; /* Light purple badge */
-            color: white;
-            padding: 4px 8px;
-            border-radius: 0.5rem;
-            font-size: 0.75rem;
-            font-weight: bold;
-            flex-shrink: 0; /* Prevent shrinking */
         }
         .loading-spinner {
             border: 4px solid #f3f3f3;
@@ -129,7 +102,7 @@
             .drop-zone {
                 padding: 1.5rem;
             }
-            .description-area, .web-detection-area {
+            .description-area {
                 padding: 1rem;
             }
         }
@@ -138,9 +111,9 @@
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
     <div class="container">
         <h1 class="text-4xl font-extrabold text-gray-800 mb-4 text-center">
-            <span class="text-indigo-600">Gemini</span> Image Describer
+            <span class="text-indigo-600">Gemini</span> Art Identifier
         </h1>
-        <p class="text-gray-600 text-center mb-6">Now with live web detection for similar images!</p>
+        <p class="text-gray-600 text-center mb-6">Gemini's description enhanced by web search context.</p>
 
 
         <div id="dropZone" class="drop-zone">
@@ -159,15 +132,15 @@
         <div id="loadingSpinner" class="loading-spinner"></div>
 
         <div class="w-full">
-            <h2 class="text-2xl font-bold text-gray-700 mb-3 text-left">Overall Description (by Gemini):</h2>
+            <h2 class="text-2xl font-bold text-gray-700 mb-3 text-left">Gemini's Enhanced Description:</h2>
             <div id="descriptionArea" class="description-area text-gray-700">
                 <p class="text-gray-500">Drop an image to get a description from the Flask backend.</p>
             </div>
-
-            <h2 class="text-2xl font-bold text-gray-700 mt-6 mb-3 text-left">Similar Images Found on Web:</h2>
+            <!-- Removed the "Similar Images Found on Web" section -->
+            <!-- <h2 class="text-2xl font-bold text-gray-700 mt-6 mb-3 text-left">Similar Images Found on Web:</h2>
             <div id="webDetectionResultsArea" class="web-detection-area text-gray-700">
                 <p class="text-gray-500">Links to visually similar images found on the web will appear here.</p>
-            </div>
+            </div> -->
         </div>
     </div>
 
@@ -177,7 +150,7 @@
         const imagePreview = document.getElementById('imagePreview');
         const imagePreviewContainer = document.getElementById('imagePreviewContainer');
         const descriptionArea = document.getElementById('descriptionArea');
-        const webDetectionResultsArea = document.getElementById('webDetectionResultsArea');
+        // const webDetectionResultsArea = document.getElementById('webDetectionResultsArea'); // Removed
         const loadingSpinner = document.getElementById('loadingSpinner');
 
         const BACKEND_URL = "http://127.0.0.1:5000/describe-image";
@@ -234,7 +207,7 @@
         function handleFiles(files) {
             if (files.length === 0) {
                 descriptionArea.textContent = "No file selected or dropped.";
-                webDetectionResultsArea.innerHTML = "<p class='text-gray-500'>Links to visually similar images found on the web will appear here.</p>";
+                // webDetectionResultsArea.innerHTML = "<p class='text-gray-500'>Links to visually similar images found on the web will appear here.</p>"; // Removed
                 imagePreviewContainer.classList.add('hidden');
                 return;
             }
@@ -242,7 +215,7 @@
             const file = files[0];
             if (!file.type.startsWith('image/')) {
                 descriptionArea.textContent = "Please drop or select an image file (e.g., JPG, PNG).";
-                webDetectionResultsArea.innerHTML = "<p class='text-gray-500'>Links to visually similar images found on the web will appear here.</p>";
+                // webDetectionResultsArea.innerHTML = "<p class='text-gray-500'>Links to visually similar images found on the web will appear here.</p>"; // Removed
                 imagePreviewContainer.classList.add('hidden');
                 return;
             }
@@ -250,7 +223,7 @@
             // Show loading spinner
             loadingSpinner.style.display = 'block';
             descriptionArea.textContent = "Sending image to backend...";
-            webDetectionResultsArea.innerHTML = "<p class='text-gray-500'>Performing web detection for similar images...</p>";
+            // webDetectionResultsArea.innerHTML = "<p class='text-gray-500'>Performing web detection for similar images...</p>"; // Removed
             imagePreviewContainer.classList.add('hidden'); // Hide previous image
 
             const reader = new FileReader();
@@ -271,7 +244,7 @@
 
             reader.onerror = () => {
                 descriptionArea.textContent = "Error reading file.";
-                webDetectionResultsArea.innerHTML = "<p class='text-gray-500'>Links to visually similar images found on the web will appear here.</p>";
+                // webDetectionResultsArea.innerHTML = "<p class='text-gray-500'>Links to visually similar images found on the web will appear here.</p>"; // Removed
                 loadingSpinner.style.display = 'none';
             };
         }
@@ -284,7 +257,6 @@
         async function sendToBackendForDescription(base64ImageData, mimeType) {
             try {
                 descriptionArea.textContent = "Waiting for backend response...";
-                webDetectionResultsArea.innerHTML = "<p class='text-gray-500'>Performing web detection for similar images...</p>";
                 loadingSpinner.style.display = 'block';
 
                 const payload = {
@@ -305,34 +277,12 @@
 
                 const result = await response.json();
 
-                // Display general description
-                descriptionArea.textContent = result.description || "No general description provided by Gemini.";
-
-                // Display web detection results
-                if (result.web_detection_results && Array.isArray(result.web_detection_results) && result.web_detection_results.length > 0) {
-                    let resultsHtml = '<ul>';
-                    result.web_detection_results.forEach(item => {
-                        const badge = item.is_museum_site ? '<span class="museum-badge">Museum Site</span>' : '';
-                        resultsHtml += `
-                            <li>
-                                ${badge}
-                                <a href="${item.url}" target="_blank" rel="noopener noreferrer">
-                                    ${item.url}
-                                </a>
-                                <span class="text-sm text-gray-500 ml-auto">(${item.match_type}, Score: ${item.score ? item.score.toFixed(2) : 'N/A'})</span>
-                            </li>
-                        `;
-                    });
-                    resultsHtml += '</ul>';
-                    webDetectionResultsArea.innerHTML = resultsHtml;
-                } else {
-                    webDetectionResultsArea.innerHTML = "<p class='text-gray-500'>No similar images found on the web.</p>";
-                }
+                // Display general description (now enhanced by Gemini with Vision AI context)
+                descriptionArea.textContent = result.description || "No description provided.";
 
             } catch (error) {
                 console.error("Error communicating with backend:", error);
                 descriptionArea.textContent = `Error: ${error.message}. Make sure your Flask backend is running and Google Cloud credentials are set.`;
-                webDetectionResultsArea.innerHTML = "<p class='text-gray-500'>Error retrieving web detection results.</p>";
             } finally {
                 loadingSpinner.style.display = 'none'; // Hide loading spinner
             }
