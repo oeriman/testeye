@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Image Describer</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for better visual appeal and responsiveness */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem; /* Increased padding */
+            max-width: 90vw; /* Fluid width */
+            width: 800px; /* Max width for larger screens */
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            align-items: center;
+        }
+        .drop-zone {
+            border: 3px dashed #cbd5e1; /* Light gray dashed border */
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 150px;
+            background-color: #f8fafc; /* Lighter background */
+        }
+        .drop-zone.hover {
+            border-color: #6366f1; /* Indigo on hover */
+            background-color: #eef2ff; /* Lighter indigo background on hover */
+        }
+        .image-preview-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            background-color: #e2e8f0; /* Gray background for preview area */
+            border-radius: 0.75rem;
+            overflow: hidden;
+            position: relative;
+        }
+        .image-preview {
+            max-width: 100%;
+            max-height: 400px; /* Limit image height */
+            height: auto;
+            border-radius: 0.5rem;
+            object-fit: contain; /* Ensure image fits without cropping */
+        }
+        .description-area {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            min-height: 100px;
+            width: 100%;
+            text-align: left;
+            overflow-wrap: break-word; /* Ensure long words break */
+            white-space: pre-wrap; /* Preserve whitespace and line breaks */
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #6366f1; /* Indigo spinner */
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 1rem auto;
+            display: none; /* Hidden by default */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .container {
+                padding: 1.5rem;
+                gap: 1.5rem;
+            }
+            .drop-zone {
+                padding: 1.5rem;
+            }
+            .description-area {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="container">
+        <h1 class="text-4xl font-extrabold text-gray-800 mb-4 text-center">
+            <span class="text-indigo-600">Gemini</span> Image Describer
+        </h1>
+
+        <div id="dropZone" class="drop-zone">
+            <svg class="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
+            <p class="text-lg text-gray-600 font-semibold">Drag & Drop your image here</p>
+            <p class="text-sm text-gray-500 mt-1">or click to select a file</p>
+            <input type="file" id="fileInput" accept="image/*" class="hidden">
+        </div>
+
+        <div id="imagePreviewContainer" class="image-preview-container hidden">
+            <img id="imagePreview" src="" alt="Image Preview" class="image-preview">
+        </div>
+
+        <div id="loadingSpinner" class="loading-spinner"></div>
+
+        <div class="w-full">
+            <h2 class="text-2xl font-bold text-gray-700 mb-3 text-left">Description:</h2>
+            <div id="descriptionArea" class="description-area text-gray-700">
+                <p class="text-gray-500">Drop an image to see its description.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        const descriptionArea = document.getElementById('descriptionArea');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        // IMPORTANT: Use the API key provided by the user.
+        const API_KEY = "AIzaSyAT8-5Wbvs0jIparzYLJDt-r20J1WnJyJ0"; // User provided API key
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false); // Prevent default for entire body
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Add visual feedback for drag over
+        dropZone.addEventListener('dragover', () => {
+            dropZone.classList.add('hover');
+        });
+
+        // Remove visual feedback when drag leaves
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('hover');
+        });
+
+        // Handle dropped files
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        // Allow clicking the drop zone to open file dialog
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Handle file selection via input
+        fileInput.addEventListener('change', (event) => {
+            handleFiles(event.target.files);
+        });
+
+        /**
+         * Handles the drop event, processes the dropped files.
+         * @param {DragEvent} e - The drop event object.
+         */
+        function handleDrop(e) {
+            dropZone.classList.remove('hover');
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        /**
+         * Processes the given FileList, reads the first image file.
+         * @param {FileList} files - The FileList object containing dropped/selected files.
+         */
+        function handleFiles(files) {
+            if (files.length === 0) {
+                descriptionArea.textContent = "No file selected or dropped.";
+                imagePreviewContainer.classList.add('hidden');
+                return;
+            }
+
+            const file = files[0];
+            if (!file.type.startsWith('image/')) {
+                descriptionArea.textContent = "Please drop or select an image file (e.g., JPG, PNG).";
+                imagePreviewContainer.classList.add('hidden');
+                return;
+            }
+
+            // Show loading spinner
+            loadingSpinner.style.display = 'block';
+            descriptionArea.textContent = "Analyzing image...";
+            imagePreviewContainer.classList.add('hidden'); // Hide previous image
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file); // Read file as base64 Data URL
+
+            reader.onloadend = async () => {
+                const base64String = reader.result;
+                // Display the image preview
+                imagePreview.src = base64String;
+                imagePreviewContainer.classList.remove('hidden');
+
+                // Extract only the base64 data part (remove "data:image/jpeg;base64," prefix)
+                const base64Data = base64String.split(',')[1];
+                const mimeType = file.type;
+
+                await describeImageWithGemini(base64Data, mimeType);
+            };
+
+            reader.onerror = () => {
+                descriptionArea.textContent = "Error reading file.";
+                loadingSpinner.style.display = 'none';
+            };
+        }
+
+        /**
+         * Sends the base64 image data to the Gemini API for description.
+         * @param {string} base64ImageData - The base64 encoded image data.
+         * @param {string} mimeType - The MIME type of the image (e.g., 'image/jpeg').
+         */
+        async function describeImageWithGemini(base64ImageData, mimeType) {
+            try {
+                // Clear previous description and show loading
+                descriptionArea.textContent = "Generating description...";
+                loadingSpinner.style.display = 'block';
+
+                const prompt = "Describe this image in detail.";
+                const payload = {
+                    contents: [
+                        {
+                            role: "user",
+                            parts: [
+                                { text: prompt },
+                                {
+                                    inlineData: {
+                                        mimeType: mimeType,
+                                        data: base64ImageData
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                };
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    descriptionArea.textContent = text;
+                } else {
+                    descriptionArea.textContent = "Could not get a description from Gemini. The response structure was unexpected.";
+                }
+
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                descriptionArea.textContent = `Error: ${error.message}. Please try again.`;
+            } finally {
+                loadingSpinner.style.display = 'none'; // Hide loading spinner
+            }
+        }
+    </script>
+</body>
+</html>
